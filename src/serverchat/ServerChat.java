@@ -48,11 +48,11 @@ class ServerChat implements IConstants {// основной класс серв�
      */
     private boolean checkAuthentication(String login, String passwd) {
         Connection connect;// переменная подключения
+        String url=DRIVER_NAME+"//"+SERVER_ADDR+":"+BAZE_PORT+PROPERTISE;
         boolean result = false;
         try {
-            // connect db
-            Class.forName(DRIVER_NAME);//регистрация драйвера работы с базой данных
-            connect = DriverManager.getConnection(SQLITE_DB);//создание объекта подключения к базе
+            // connect db            
+            connect = DriverManager.getConnection(url,USERNAME,PASSWORD);//создание объекта подключения к базе
             // looking for login && passwd in db
             Statement stmt = connect.createStatement();//объект для выполнения запросов к базе
             ResultSet rs = stmt.executeQuery(SQL_SELECT.replace("?", login));//результат запроса к базе
