@@ -7,7 +7,7 @@ package serverchat;
 
 /**
  *
- * @author Yuri
+ * @author Yuri 2
  */
 public class ServerChat {
 
