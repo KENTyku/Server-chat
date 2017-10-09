@@ -19,7 +19,7 @@ interface IConstants {
     final String USERNAME = "root"; //пользователь БД
     final String PASSWORD = "123456"; //пароль БД
     final String SERVER_START = "Server is started...";
-    final String SERVER_STOP = "Server stopped.";
+    final String SERVER_STOP = "Server stopped...";
     final String CLIENT_JOINED = " client joined.";
     final String CLIENT_DISCONNECTED = " disconnected.";
     final String CLIENT_PROMPT = "$ "; // client prompt

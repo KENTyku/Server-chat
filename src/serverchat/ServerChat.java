@@ -13,6 +13,8 @@ import java.io.*;
 import java.net.*;
 import java.sql.*;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 class ServerChat implements IConstants {// основной класс сервера
 
@@ -76,7 +78,7 @@ class ServerChat implements IConstants {// основной класс серв�
      */
     class CommandHandler implements Runnable {
         Scanner scanner = new Scanner(System.in);
-
+        //PrintWriter writer;
         @Override // т.к. расширяет интерфейс Runnable то необходимо переопределить метод run
         public void run() {
             String command;            
@@ -84,11 +86,19 @@ class ServerChat implements IConstants {// основной класс серв�
                 command = scanner.nextLine();//считывать с клавиатуры 
             while (!command.equals(EXIT_COMMAND));//пока пользователь не напишет exit
             try {
-                PrintWriter writer = new PrintWriter(socket.getOutputStream());               
-                writer.println("Server is down");
-                server.close();//закрытие серверного сокета
+                //writer = new PrintWriter(socket.getOutputStream());               
+                //writer.println("Server is down");
+                //socket.close();//закрытие клиентского сокета
+                socket.close();//закрытие серверного сокета                
             } catch (Exception ex) {
-                System.out.println(ex.getMessage());
+                System.out.println(ex.getMessage());            
+            }
+              finally {
+                try {
+                    server.close();
+                } catch (IOException ex) {
+                    System.out.println(ex.getMessage());
+                }
             }
         }
     }
