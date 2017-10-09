@@ -145,7 +145,7 @@ class ServerChat implements IConstants {// основной класс серв�
                                 message = EXIT_COMMAND;
                             }
                         } else if (!message.equalsIgnoreCase(EXIT_COMMAND)) {//пока massage не равно exit
-                            writer.println("echo: " + message);   //пишем в сокет клиента, то что получлили от него
+                            writer.println(name+": " + message);   //пишем в сокет клиента, то что получлили от него
                             writer.println("\0");
                         }
                         writer.flush();//иначе очищаем буфер вывода (для последующего закрытия сокета клиента) 
