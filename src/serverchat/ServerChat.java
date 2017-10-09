@@ -48,7 +48,7 @@ class ServerChat implements IConstants {// основной класс серв�
      */
     private boolean checkAuthentication(String login, String passwd) {
         Connection connect;// переменная подключения
-        String url=DRIVER_NAME+"//"+SERVER_ADDR+":"+BAZE_PORT+PROPERTISE;
+        String url=DRIVER_NAME+"://"+SERVER_ADDR+":"+BAZE_PORT+"/"+SQLITE_DB+PROPERTISE;        
         boolean result = false;
         try {
             // connect db            
@@ -79,11 +79,13 @@ class ServerChat implements IConstants {// основной класс серв�
 
         @Override // т.к. расширяет интерфейс Runnable то необходимо переопределить метод run
         public void run() {
-            String command;
+            String command;            
             do
                 command = scanner.nextLine();//считывать с клавиатуры 
             while (!command.equals(EXIT_COMMAND));//пока пользователь не напишет exit
             try {
+                PrintWriter writer = new PrintWriter(socket.getOutputStream());               
+                writer.println("Server is down");
                 server.close();//закрытие серверного сокета
             } catch (Exception ex) {
                 System.out.println(ex.getMessage());
