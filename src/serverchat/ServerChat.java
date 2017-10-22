@@ -18,9 +18,10 @@ import java.util.logging.Logger;
 
 class ServerChat implements IConstants {// основной класс сервера
 
-    int client_count = 0;
+//    int client_count = 0;
     ServerSocket server;
     Socket socket;
+    ArrayList<ClientHandler> clients;// список подключенных клиентов
 
     public static void main(String[] args) {
         new ServerChat();
@@ -30,17 +31,20 @@ class ServerChat implements IConstants {// основной класс серв�
     ServerChat() {//конструктор сервера
         System.out.println(SERVER_START);
         new Thread(new CommandHandler()).start();// поток для управления выключенем сервера по команде с консоли
+        clients=new ArrayList<>();//создаем список клиентов
         try {
             server = new ServerSocket(SERVER_PORT);//создаем сокет сервера
             while (true) {//запускаем бесконечный цикл
                 socket = server.accept();//когда клиентский сокет подключится к серверу
-                client_count++;//включаем счетчик подключений
-                System.out.println("#" + client_count + CLIENT_JOINED);
-                new Thread(new ClientHandler(socket)).start();//стартуем поток в котором создаем объект 
+//                client_count++;//включаем счетчик подключений
+                System.out.println("#" + (clients.size()+1) + CLIENT_JOINED);//вывод информации о подключившемся клиенте
+                ClientHandler client=new ClientHandler(socket);//создание объекта обработки клиентского сокета 
+                clients.add(client);//добавление в список
+                new Thread(client).start();//стартуем поток объекта 
 				//взаимодествия с клиентским сокетом
             }
         } catch (Exception ex) {
-            System.out.println(ex.getMessage());
+            System.out.println("Сокет сервера был закрыт:"+ex.getMessage());
         }
         System.out.println(SERVER_STOP);
     }
@@ -73,8 +77,9 @@ class ServerChat implements IConstants {// основной класс серв�
     }
 
     /**
-     * CommandHandler: processing of commands from server console
-	 объект сервер который отвечает на запросы с консоли
+     * Класс описывает работу самого сервера
+	который отвечает на запросы с консоли
+        * (обработчик команд на сервере)
      */
     class CommandHandler implements Runnable {
         Scanner scanner = new Scanner(System.in);
@@ -85,30 +90,26 @@ class ServerChat implements IConstants {// основной класс серв�
             do
                 command = scanner.nextLine();//считывать с клавиатуры 
             while (!command.equals(EXIT_COMMAND));//пока пользователь не напишет exit
-            try {
-                //writer = new PrintWriter(socket.getOutputStream());               
-                //writer.println("Server is down");
-                //socket.close();//закрытие клиентского сокета
-                socket.close();//закрытие серверного сокета                
+             try {
+                server.close();
             } catch (Exception ex) {
-                System.out.println(ex.getMessage());            
-            }
-              finally {
-                try {
-                    server.close();
-                } catch (IOException ex) {
-                    System.out.println(ex.getMessage());
-                }
+                System.out.println(ex.getMessage());
             }
         }
     }
-
+    
+    
+    void broadcasMsg(String msg){
+        for (ClientHandler client: clients){
+            client.sendMsg(msg);
+        }
+    }
     /**
-     * ClientHandler: service requests of clients   
+     * Класс обработки запросов клиентов (Обработчик клиентов) 
      */
     class ClientHandler implements Runnable {   //класс отвечающих клиентов
         BufferedReader reader;
-        PrintWriter writer;
+        PrintWriter writer;//класс вывода в поток (в нашем случае поток-сокет клиента)
         Socket socket;
         String name;
 
@@ -118,9 +119,18 @@ class ServerChat implements IConstants {// основной класс серв�
                 reader = new BufferedReader(
                     new InputStreamReader(socket.getInputStream())); //сообщение пришедшее от  сокета клиента
                 writer = new PrintWriter(socket.getOutputStream());  //сообщение отправляемое в сокет клиента
-                name = "Client #" + client_count;
+                name = "Client #" + (clients.size()+1);
             } catch(Exception ex) {
                 System.out.println(ex.getMessage());
+            }
+        }
+        void sendMsg(String msg){
+            try{
+                writer.println(msg);//отправка сообщения msg в сокет клиента
+                writer.flush();
+            }
+            catch(Exception ex){                
+                System.out.println(ex.getMessage());        
             }
         }
 
@@ -137,20 +147,21 @@ class ServerChat implements IConstants {// основной класс серв�
 																//в строковый массив (три куска)
                             if (checkAuthentication(wds[1], wds[2])) {//2ой и 3ий кусок оправляем на проверку и если она 
                                 name = wds[1];							// успешна, выводим приветствие в сокет клиента
-                                writer.println("Hello, " + name);
-                                writer.println("\0");
+                                sendMsg("Hello, " + name);
+                                sendMsg("\0");
                             } else {
                                 System.out.println(name + ": " + AUTH_FAIL);
-                                writer.println(AUTH_FAIL);// иначе выводим отказ в сокет клиента
+                                sendMsg(AUTH_FAIL);// иначе выводим отказ в сокет клиента
                                 message = EXIT_COMMAND;
                             }
                         } else if (!message.equalsIgnoreCase(EXIT_COMMAND)) {//пока massage не равно exit
-                            writer.println(name+": " + message);   //пишем в сокет клиента, то что получлили от него
-                            writer.println("\0");
+                            broadcasMsg(name+": " + message);   //пишем в сокет клиента, то что получлили от него
+                            broadcasMsg("\0");
                         }
                         writer.flush();//иначе очищаем буфер вывода (для последующего закрытия сокета клиента) 
                     }
                 } while (!message.equalsIgnoreCase(EXIT_COMMAND));//пока massage не равно exit выполняется код  do 
+                clients.remove(this);
                 socket.close();
                 System.out.println(name + CLIENT_DISCONNECTED);
             } catch(Exception ex) {
