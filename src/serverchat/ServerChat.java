@@ -36,7 +36,6 @@ class ServerChat implements IConstants {// основной класс серв�
             server = new ServerSocket(SERVER_PORT);//создаем сокет сервера
             while (true) {//запускаем бесконечный цикл
                 socket = server.accept();//когда клиентский сокет подключится к серверу
-//                client_count++;//включаем счетчик подключений
                 System.out.println("#" + (clients.size()+1) + CLIENT_JOINED);//вывод информации о подключившемся клиенте
                 ClientHandler client=new ClientHandler(socket);//создание объекта обработки клиентского сокета 
                 clients.add(client);//добавление в список
@@ -133,12 +132,16 @@ class ServerChat implements IConstants {// основной класс серв�
                 System.out.println(ex.getMessage());        
             }
         }
+       
 
         @Override // переопределяем метод для потока
         public void run() {
             String message;
             try {
+                sendMsg("Connecting to server...");
+              
                 do {
+                    
                     message = reader.readLine();// присвоение переменной сообщения, пришедшего от сокета клиента 
                     if (message != null) {
                         System.out.println(name + ": " + message);
