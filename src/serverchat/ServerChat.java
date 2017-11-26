@@ -17,24 +17,30 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 class ServerChat implements IConstants {// основной класс сервера
-
-//    int client_count = 0;
-    ServerSocket server;
-    Socket socket;
+    ServerSocket server;//серверный сокет
+    Socket socket;//клиентский сокет
     ArrayList<ClientHandler> clients;// список подключенных клиентов
 
-    public static void main(String[] args) {
+    public static void main(String[] args) { //создание сервера
         new ServerChat();
     }
 
-	
-    ServerChat() {//конструктор сервера
+    //Конструктор сервера
+    ServerChat() {
         System.out.println(SERVER_START);
-        new Thread(new CommandHandler()).start();// поток для управления выключенем сервера по команде с консоли
-        clients=new ArrayList<>();//создаем список клиентов
+        
+        // поток для управления выключенем сервера по команде с консоли
+        new Thread(new CommandHandler()).start();
+        
+        //создаем список клиентов
+        clients=new ArrayList<>();
+        
         try {
-            server = new ServerSocket(SERVER_PORT);//создаем сокет сервера
-            while (true) {//запускаем бесконечный цикл
+            //создаем сокет сервера
+            server = new ServerSocket(SERVER_PORT);
+            
+            //запускаем бесконечный цикл работы сервера
+            while (true) {
                 socket = server.accept();//когда клиентский сокет подключится к серверу
                 System.out.println("#" + (clients.size()+1) + CLIENT_JOINED);//вывод информации о подключившемся клиенте
                 ClientHandler client=new ClientHandler(socket);//создание объекта обработки клиентского сокета 
@@ -49,7 +55,7 @@ class ServerChat implements IConstants {// основной класс серв�
     }
 
     /**
-     * checkAuthentication: check login and password
+     *  метод checkAuthentication: проверка логина и пароля
      */
     private boolean checkAuthentication(String login, String passwd) {
         Connection connect;// переменная подключения
@@ -76,13 +82,13 @@ class ServerChat implements IConstants {// основной класс серв�
     }
 
     /**
+     * Выключение сервера.
      * Класс описывает работу самого сервера
 	который отвечает на запросы с консоли
         * (обработчик команд на сервере)
      */
     class CommandHandler implements Runnable {
-        Scanner scanner = new Scanner(System.in);
-        //PrintWriter writer;
+        Scanner scanner = new Scanner(System.in);        
         @Override // т.к. расширяет интерфейс Runnable то необходимо переопределить метод run
         public void run() {
             String command;            
@@ -91,13 +97,16 @@ class ServerChat implements IConstants {// основной класс серв�
             while (!command.equals(EXIT_COMMAND));//пока пользователь не напишет exit
              try {
                 server.close();
+                System.exit(0);
             } catch (Exception ex) {
                 System.out.println(ex.getMessage());
             }
         }
     }
     
-    
+    /*
+    Многоадрессное сообщение всем
+    */
     void broadcasMsg(String msg){
         for (ClientHandler client: clients){
             client.sendMsg(msg);
@@ -111,8 +120,10 @@ class ServerChat implements IConstants {// основной класс серв�
         PrintWriter writer;//класс вывода в поток (в нашем случае поток-сокет клиента)
         Socket socket;
         String name;
+        
+        //конструктор обработчика
 
-        ClientHandler(Socket clientSocket) {//конструктор
+        ClientHandler(Socket clientSocket) {
             try {
                 socket = clientSocket;
                 reader = new BufferedReader(
@@ -123,6 +134,9 @@ class ServerChat implements IConstants {// основной класс серв�
                 System.out.println(ex.getMessage());
             }
         }
+        
+        //метод отправки сообщения клиенту
+        
         void sendMsg(String msg){
             try{
                 writer.println(msg);//отправка сообщения msg в сокет клиента
@@ -133,32 +147,37 @@ class ServerChat implements IConstants {// основной класс серв�
             }
         }
        
-
-        @Override // переопределяем метод для потока
+        
+        @Override // переопределяем метод для потока обработки подключившегося клиента
         public void run() {
             String message;
             try {
+                //отправка сообщения клиенту который подключился
                 sendMsg("Connecting to server...");
-              
-                do {
-                    
+                
+                //циклическая обработка пришедших от клиента сообщений
+                do {                    
                     message = reader.readLine();// присвоение переменной сообщения, пришедшего от сокета клиента 
                     if (message != null) {
+                        //вывод в консоль сервера непустого сообщения
                         System.out.println(name + ": " + message);
+                        /*
+                        проверка на получение сообщения авторизации 
+                        */
                         if (message.startsWith(AUTH_SIGN)) {// если начало сообщения совпадает с авторизационным полем
                             String[] wds = message.split(" ");// то режем через пробелы на куски и помещаем
-																//в строковый массив (три куска)
+                            //в строковый массив (три куска)
                             if (checkAuthentication(wds[1], wds[2])) {//2ой и 3ий кусок оправляем на проверку и если она 
-                                name = wds[1];							// успешна, выводим приветствие в сокет клиента
+                                name = wds[1];// успешна, выводим приветствие в сокет клиента
                                 sendMsg("Hello, " + name);
-                                sendMsg("\0");
+                                sendMsg("\0");//вспомогательное сообщение для клиента(чтобы отловить прилгашение на стороне клиента)
                             } else {
                                 System.out.println(name + ": " + AUTH_FAIL);
                                 sendMsg(AUTH_FAIL);// иначе выводим отказ в сокет клиента
                                 message = EXIT_COMMAND;
                             }
                         } else if (!message.equalsIgnoreCase(EXIT_COMMAND)) {//пока massage не равно exit
-                            broadcasMsg(name+": " + message);   //пишем в сокет клиента, то что получлили от него
+                            broadcasMsg(name+": " + message);   //пишем в сокеты клиентов, то что получлили от него
                             broadcasMsg("\0");
                         }
                         writer.flush();//иначе очищаем буфер вывода (для последующего закрытия сокета клиента) 
