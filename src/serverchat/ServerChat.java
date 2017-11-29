@@ -157,6 +157,7 @@ class ServerChat implements IConstants {// основной класс серв�
             for (ClientHandler client : clients) {
                 writer.print(client.name+";");
             }
+            writer.print("/userlistend");
             writer.flush();
        }
         
