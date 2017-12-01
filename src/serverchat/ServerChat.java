@@ -149,21 +149,13 @@ class ServerChat implements IConstants {// основной класс серв�
         
         //метод отправки списка подключившихся пользователей к клиенту
        void sendUserList(){
-//           for (ClientHandler client : clients) {
-//               System.out.print(client.name+";");
-//            }
+           //формируем строку для рассылки
             String userlist="/userlistadd";
             for (ClientHandler client : clients){
                 userlist=userlist.concat(client.name+";");            
             }
             userlist=userlist.concat("/userlistend");
-            broadcasMsg(userlist);
-//            writer.print("/userlistadd");
-//            for (ClientHandler client : clients) {
-//                writer.print(client.name+";");
-//            }
-//            writer.print("/userlistend");
-//            writer.flush();
+            broadcasMsg(userlist);//рассылаем
        }
         
         @Override // переопределяем метод для потока обработки подключившегося клиента
