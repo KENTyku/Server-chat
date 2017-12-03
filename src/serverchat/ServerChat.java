@@ -15,6 +15,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static serverchat.IConstants.AUTH_SIGN;
 
 class ServerChat implements IConstants {// основной класс сервера
     ServerSocket server;//серверный сокет
@@ -107,7 +108,7 @@ class ServerChat implements IConstants {// основной класс серв�
     /*
     Многоадрессное сообщение всем
     */
-    void broadcasMsg(String msg){
+    void broadcastMsg(String msg){
         for (ClientHandler client: clients){
             client.sendMsg(msg);
         }
@@ -155,7 +156,14 @@ class ServerChat implements IConstants {// основной класс серв�
                 userlist=userlist.concat(client.name+";");            
             }
             userlist=userlist.concat("/userlistend");
-            broadcasMsg(userlist);//рассылаем
+            broadcastMsg(userlist);//рассылаем
+       }
+       
+       //метод проверки доступности подключенных клиентов
+       void sendEcho(){
+           //формируем строку для рассылки
+           broadcastMsg("/echo");
+           
        }
         
         @Override // переопределяем метод для потока обработки подключившегося клиента
@@ -164,35 +172,60 @@ class ServerChat implements IConstants {// основной класс серв�
             try {
                 //отправка сообщения клиенту который подключился
                 sendMsg("Connecting to server...");
-                sendUserList();               
+                sendUserList();  
+                int count = 0;
+                int echocount=0;
                 //циклическая обработка пришедших от клиента сообщений
-                do {                    
+                do { 
+                    
+                    if (count==0){                        
+//                        sendMsg("/echo");
+                        echocount=0;
+                        count=10;                        
+                    }
+                    count--;
+//                    System.out.println(count);
+                    if ((count==1)&&(echocount==0)){
+                        System.out.println("rem");
+                        clients.remove(this);
+                        sendUserList(); 
+                    }
                     message = reader.readLine();// присвоение переменной сообщения, пришедшего от сокета клиента 
-                    if (message != null) {
-                        //вывод в консоль сервера непустого сообщения
-                        System.out.println(name + ": " + message);
+                    if (message != null) {                        
                         /*
                         проверка на получение сообщения авторизации 
                         */
-                        if (message.startsWith(AUTH_SIGN)) {// если начало сообщения совпадает с авторизационным полем
-                            String[] wds = message.split(" ");// то режем через пробелы на куски и помещаем
-                            //в строковый массив (три куска)
-                            if (checkAuthentication(wds[1], wds[2])) {//2ой и 3ий кусок оправляем на проверку и если она 
-                                name = wds[1];// успешна, выводим приветствие в сокет клиента
-                                sendUserList();
-                                sendMsg("Hello, " + name);
-                                sendMsg("\0");//вспомогательное сообщение для клиента(чтобы отловить прилгашение на стороне клиента)
-                            } else {
-                                System.out.println(name + ": " + AUTH_FAIL);
-                                sendMsg(AUTH_FAIL);// иначе выводим отказ в сокет клиента
-                                message = EXIT_COMMAND;
-                            }
-                        } else if (!message.equalsIgnoreCase(EXIT_COMMAND)) {//пока massage не равно exit
-                            broadcasMsg(name+": " + message);   //пишем в сокеты клиентов, то что получлили от него
-                            broadcasMsg("\0");
+                        if (message.startsWith("/echo")){
+                           echocount=1;                            
                         }
+                        else{
+                            if (message.startsWith(AUTH_SIGN)) {// если начало сообщения совпадает с авторизационным полем
+                                //вывод в консоль сервера непустого сообщения
+                                System.out.println(name + ": " + message);
+                                String[] wds = message.split(" ");// то режем через пробелы на куски и помещаем
+                                //в строковый массив (три куска)
+                                if (checkAuthentication(wds[1], wds[2])) {//2ой и 3ий кусок оправляем на проверку и если она 
+                                    name = wds[1];// успешна, выводим приветствие в сокет клиента
+                                    sendUserList();
+                                    sendMsg("Hello, " + name);
+                                    sendMsg("\0");//вспомогательное сообщение для клиента(чтобы отловить прилгашение на стороне клиента)
+                                } else {
+                                    System.out.println(name + ": " + AUTH_FAIL);
+                                    sendMsg(AUTH_FAIL);// иначе выводим отказ в сокет клиента
+                                    message = EXIT_COMMAND;
+                                }
+                            }
+                            else {
+                                if (!message.equalsIgnoreCase(EXIT_COMMAND)) {//пока massage не равно exit
+                                    //вывод в консоль сервера непустого сообщения
+                                    System.out.println(name + ": " + message);
+                                    broadcastMsg(name+": " + message);   //пишем в сокеты клиентов, то что получлили от него
+                                    broadcastMsg("\0");
+                                }
+                            }   
+                        }                                             
                         writer.flush();//иначе очищаем буфер вывода (для последующего закрытия сокета клиента) 
-                    }
+                    }                    
                 } while (!message.equalsIgnoreCase(EXIT_COMMAND));//пока massage не равно exit выполняется код  do 
                 clients.remove(this);
                 socket.close();
@@ -202,4 +235,11 @@ class ServerChat implements IConstants {// основной класс серв�
             }
         }
     }
+//    class ClientEcho extends ClientHandler {
+//        
+//        ClientEcho(){
+//            
+//        }
+//        
+//    }
 }
