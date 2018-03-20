@@ -160,11 +160,11 @@ class ServerChat implements IConstants {// основной класс серв�
        }
        
        //метод проверки доступности подключенных клиентов
-       void sendEcho(){
-           //формируем строку для рассылки
-           broadcastMsg("/echo");
-           
-       }
+//       void sendEcho(){
+//           //формируем строку для рассылки
+//           broadcastMsg("/echo");
+//           
+//       }
         
         @Override // переопределяем метод для потока обработки подключившегося клиента
         public void run() {
@@ -173,32 +173,32 @@ class ServerChat implements IConstants {// основной класс серв�
                 //отправка сообщения клиенту который подключился
                 sendMsg("Connecting to server...");
                 sendUserList();  
-                int count = 0;
-                int echocount=0;
+//                int count = 0;
+//                int echocount=0;
                 //циклическая обработка пришедших от клиента сообщений
                 do { 
                     
-                    if (count==0){                        
-//                        sendMsg("/echo");
-                        echocount=0;
-                        count=10;                        
-                    }
-                    count--;
-//                    System.out.println(count);
-                    if ((count==1)&&(echocount==0)){
-                        System.out.println("rem");
-                        clients.remove(this);
-                        sendUserList(); 
-                    }
+//                    if (count==0){                        
+////                        sendMsg("/echo");
+//                        echocount=0;
+//                        count=10;                        
+//                    }
+//                    count--;
+////                    System.out.println(count);
+//                    if ((count==1)&&(echocount==0)){
+//                        System.out.println("rem");
+//                        clients.remove(this);
+//                        sendUserList(); 
+//                    }
                     message = reader.readLine();// присвоение переменной сообщения, пришедшего от сокета клиента 
                     if (message != null) {                        
                         /*
                         проверка на получение сообщения авторизации 
                         */
-                        if (message.startsWith("/echo")){
-                           echocount=1;                            
-                        }
-                        else{
+//                        if (message.startsWith("/echo")){
+//                           echocount=1;                            
+//                        }
+//                        else{
                             if (message.startsWith(AUTH_SIGN)) {// если начало сообщения совпадает с авторизационным полем
                                 //вывод в консоль сервера непустого сообщения
                                 System.out.println(name + ": " + message);
@@ -223,7 +223,7 @@ class ServerChat implements IConstants {// основной класс серв�
                                     broadcastMsg("\0");
                                 }
                             }   
-                        }                                             
+//                        }                                             
                         writer.flush();//иначе очищаем буфер вывода (для последующего закрытия сокета клиента) 
                     }                    
                 } while (!message.equalsIgnoreCase(EXIT_COMMAND));//пока massage не равно exit выполняется код  do 
